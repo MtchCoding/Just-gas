@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PH Gas Watch — weekly fuel prices & next-Tuesday forecast</title>
+<meta name="description" content="Track Philippine pump prices for unleaded, premium and diesel, and see whether to fill up before or after next Tuesday's adjustment.">
+<meta name="theme-color" content="#e8590c">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<style>
+:root{--bg:#f4f5f8;--card:#fff;--tx:#14181f;--mu:#5d6675;--ln:#e2e6ec;--ac:#e8590c;--ac2:#1c7ed6;--up:#d6336c;--dn:#2b8a3e;--band:rgba(232,89,12,.12);--sh:0 1px 2px rgba(20,24,31,.05),0 4px 16px rgba(20,24,31,.04);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1318;--card:#181e26;--tx:#eef1f5;--mu:#9aa5b5;--ln:#2a323d;--ac:#ff8a3d;--ac2:#4dabf7;--up:#ff6b9a;--dn:#5fd17a;--band:rgba(255,138,61,.15);--sh:none;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1318;--card:#181e26;--tx:#eef1f5;--mu:#9aa5b5;--ln:#2a323d;--ac:#ff8a3d;--ac2:#4dabf7;--up:#ff6b9a;--dn:#5fd17a;--band:rgba(255,138,61,.15);--sh:none;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+main{max-width:760px;margin:0 auto;padding:16px 16px 40px}
+.num{font-variant-numeric:tabular-nums}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:4px 0 14px}
+h1{font-size:1.45rem;margin:0 0 2px;letter-spacing:-.01em}
+h2{font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin:0 0 10px}
+.sub{color:var(--mu);font-size:.88rem;margin:0}
+.iconbtn{flex:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--ln);background:var(--card);color:var(--tx);font-size:1.1rem;cursor:pointer}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--ln);border-radius:999px;padding:6px 12px;font-size:.85rem;margin-bottom:12px}
+.chip b{color:var(--ac)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--ac);box-shadow:0 0 0 0 var(--ac);animation:p 2s infinite}
+@keyframes p{70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:4px}
+.tabs button{flex:1;padding:10px;border-radius:10px;border:0;background:transparent;color:var(--mu);font-size:1rem;cursor:pointer;font-weight:500}
+.tabs button[aria-selected="true"]{background:var(--ac);color:#fff;font-weight:600}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.tile{border:1px solid var(--ln);border-radius:12px;padding:12px}
+.tile .name{display:flex;align-items:center;font-size:.85rem;color:var(--mu);font-weight:500}
+.tile .price{font-size:2rem;font-weight:750;letter-spacing:-.02em;line-height:1.15;margin:2px 0 6px}
+.tile .price small{font-size:.9rem;font-weight:500;color:var(--mu)}
+.tile .meta{display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--mu)}
+.tile .meta b{display:block;font-size:.95rem}
+.up{color:var(--up)}.dn{color:var(--dn)}.flat{color:var(--mu)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;flex:none}
+.verdict{display:flex;gap:12px;align-items:flex-start;font-size:1rem;padding:12px 14px;border-radius:12px;background:var(--band);margin:12px 0 0}
+.verdict .ico{font-size:1.4rem;line-height:1.2}
+.verdict strong{display:block;font-size:1.05rem}
+.verdict span{font-size:.88rem;color:var(--mu)}
+.badge{display:inline-block;font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--ac2);color:#fff;vertical-align:2px;margin-left:4px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;margin-bottom:4px;align-items:center}
+.legend span{display:inline-flex;align-items:center}
+.chartwrap{position:relative}
+svg{width:100%;height:auto;display:block;touch-action:pan-y}
+.tip{position:absolute;top:0;pointer-events:none;background:var(--tx);color:var(--bg);font-size:.8rem;padding:7px 9px;border-radius:8px;white-space:nowrap;transform:translateX(-50%);opacity:0;transition:opacity .12s}
+.tip.show{opacity:1}
+.tip b{display:block;margin-bottom:2px}
+label{display:block;font-size:.8rem;color:var(--mu);margin:8px 0 4px}
+input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--ln);background:var(--bg);color:var(--tx);font-size:1rem;font-family:inherit}
+input:focus-visible,button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button.act{padding:10px 16px;border:1px solid var(--ac);border-radius:10px;background:var(--ac);color:#fff;font-size:.95rem;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--tx);border-color:var(--ln);font-weight:500}
+button.act:active{transform:translateY(1px)}
+.note{font-size:.8rem;color:var(--mu);margin:10px 0 0}
+.cost{display:grid;gap:8px;margin-top:10px}
+.cost div{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 12px;border-radius:10px;background:var(--bg)}
+.cost em{font-style:normal;font-size:.82rem}
+details summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"＋";color:var(--mu)}
+details[open] summary::after{content:"－"}
+.sc{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{padding:8px 6px;border-bottom:1px solid var(--ln);text-align:right;white-space:nowrap}
+th{font-size:.78rem;color:var(--mu);font-weight:600}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;transition:.2s;pointer-events:none;z-index:9;max-width:90vw}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{font-size:.78rem;color:var(--mu);line-height:1.55}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <div>
+  <h1>⛽ PH Gas Watch</h1>
+  <p class="sub">Weekly pump price tracker and next-Tuesday forecast for commuters</p>
+ </div>
+ <button class="iconbtn" id="theme" aria-label="Switch color theme" title="Theme">◐</button>
+</header>
+
+<div class="chip" id="countdown" aria-live="polite"><i class="pulse"></i><span></span></div>
+<p class="note" id="syncst" style="margin:-4px 0 12px">Checking for this week's official numbers…</p>
+
+<div class="tabs" id="tabs" role="tablist" aria-label="Fuel type">
+ <button role="tab" data-f="g" aria-selected="true">Gasoline</button>
+ <button role="tab" data-f="d" aria-selected="false">Diesel</button>
+</div>
+
+<section class="card" aria-labelledby="h-now">
+ <h2 id="h-now">Prices now</h2>
+ <div class="tiles" id="stats"></div>
+ <div class="verdict" id="verdict" aria-live="polite"></div>
+</section>
+
+<section class="card" aria-labelledby="h-chart">
+ <h2 id="h-chart">Price trend (₱ per liter)</h2>
+ <div class="legend" id="legend"></div>
+ <div class="note" style="margin:0 0 8px">Solid line = actual, dashed = forecast with likely range. Tap or hover for details.</div>
+ <div class="chartwrap">
+  <svg id="chart" viewBox="0 0 640 300" role="img" aria-label="Fuel price chart"></svg>
+  <div class="tip" id="tip"></div>
+ </div>
+</section>
+
+<section class="card" aria-labelledby="h-cost">
+ <h2 id="h-cost">Fill-up cost</h2>
+ <div class="row">
+  <div><label for="lit">Liters per fill-up</label><input id="lit" class="num" type="number" inputmode="decimal" min="1" step="1"></div>
+  <div><label for="fpm">Fill-ups per month</label><input id="fpm" class="num" type="number" inputmode="numeric" min="0" step="1"></div>
+ </div>
+ <div class="cost num" id="cost"></div>
+</section>
+
+<section class="card">
+ <details id="projbox">
+  <summary>Got the industry projection for next Tuesday?</summary>
+  <p class="note">Oil companies and DOE usually announce an estimated adjustment mid-week and on Friday. It's more reliable than the trend, so enter it here and the forecast uses it instead. These fields clear when you add the actual week.</p>
+  <div class="row">
+   <div><label for="pg">Gasoline ±₱/L</label><input id="pg" class="num" type="number" inputmode="decimal" step="0.05" placeholder="e.g. 1.10"></div>
+   <div><label for="pz">Diesel ±₱/L</label><input id="pz" class="num" type="number" inputmode="decimal" step="0.05" placeholder="e.g. -0.40"></div>
+  </div>
+  <div class="btns"><button class="act" id="projsave">Use projection</button><button class="act ghost" id="projclear">Clear</button></div>
+ </details>
+</section>
+
+<section class="card">
+ <details id="addbox">
+  <summary>Update with this week's numbers</summary>
+  <p class="note">Weeks are added automatically from DOE and GasWatch PH, usually on Tuesday morning. Use this only if a week is missing or you want to enter your own numbers.</p>
+  <div class="row">
+   <div><label for="wd">Week (Tuesday)</label><input id="wd" placeholder="Nov 10"></div>
+   <div><label for="wg">Unleaded ±₱</label><input id="wg" class="num" type="number" inputmode="decimal" step="0.05" placeholder="-1.20"></div>
+   <div><label for="wgp">Premium ±₱ <small>(blank = same)</small></label><input id="wgp" class="num" type="number" inputmode="decimal" step="0.05"></div>
+   <div><label for="wdz">Diesel ±₱</label><input id="wdz" class="num" type="number" inputmode="decimal" step="0.05" placeholder="0.80"></div>
+  </div>
+  <div class="btns"><button class="act" id="add">Add week</button><button class="act ghost" id="undo">Undo last week</button></div>
+ </details>
+</section>
+
+<section class="card">
+ <details id="pricebox">
+  <summary>Set your station's prices</summary>
+  <p class="note">Prices vary by city and station (Baguio and provincial prices usually run higher). Enter what your station charges today.</p>
+  <div class="row" id="pin"></div>
+  <div class="btns"><button class="act" id="save">Save my prices</button><button class="act ghost" id="reset">Reset all data</button></div>
+ </details>
+</section>
+
+<section class="card sc" aria-labelledby="h-hist">
+ <h2 id="h-hist">Weekly adjustments</h2>
+ <table id="tbl" class="num"></table>
+</section>
+
+<div class="btns" style="margin:0 0 16px"><button class="act ghost" id="share">Share this week's outlook</button></div>
+
+<footer>
+ Weekly changes are from DOE and oil company announcements (Oct 20, Oct 27, Nov 3, 2026). Unleaded (RON 91, ₱86.80) and Premium (RON 95, ₱87.70) start from DOE's Metro Manila common prices plus the Nov 3 hike. Premium is assumed to move the same as unleaded until you enter a different change. Diesel's starting price is an estimate, so enter your own station's price. The trend forecast is a simple estimate, not a guarantee. New weekly adjustments are fetched automatically, with GasWatch PH first and the DOE Oil Monitor when it's published (DOE's numbers take priority). Your own prices and settings stay on this device.
+</footer>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+var KEY="phgas3",OLD="phgas2",MAXW=12;
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var DEF={price:{u:86.80,p:87.70,d:91.00},weeks:[{d:"Oct 20",g:-4.30,gp:-4.30,z:2.60},{d:"Oct 27",g:-0.30,gp:-0.30,z:1.20},{d:"Nov 3",g:3.50,gp:3.50,z:-1.00}],proj:{g:null,z:null},lit:10,fpm:4,skip:[]};
+var FUELS={g:[{k:"u",n:"Unleaded",sub:"RON 91",ch:"g",pj:"g",col:"var(--ac)",pos:20},{k:"p",n:"Premium",sub:"RON 95",ch:"gp",pj:"g",col:"var(--ac2)",pos:-12}],d:[{k:"d",n:"Diesel",sub:"",ch:"z",pj:"z",col:"var(--ac)",pos:-12}]};
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function load(){
+ var s=clone(DEF);
+ try{var raw=localStorage.getItem(KEY)||localStorage.getItem(OLD);if(raw){var o=JSON.parse(raw);
+  if(o&&o.price&&Array.isArray(o.weeks)){s.price=o.price;s.weeks=o.weeks;if(o.proj)s.proj=o.proj;if(o.lit>0)s.lit=o.lit;if(o.fpm>=0)s.fpm=o.fpm;if(Array.isArray(o.skip))s.skip=o.skip}}}catch(e){}
+ return s;
+}
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+var S=load(),F=lsGet(KEY+"-tab")==="d"?"d":"g";
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function $(i){return document.getElementById(i)}
+function esc(t){return String(t).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function r2(n){return Math.round(n*100)/100}
+function sign(n){n=r2(n);return(n>0?"+":n<0?"−":"±")+"₱"+Math.abs(n).toFixed(2)}
+function peso(n){return"₱"+Math.round(n).toLocaleString("en-PH")}
+function cls(n){n=r2(n);return n>0?"up":n<0?"dn":"flat"}
+function chg(w,c){return c==="gp"&&(w.gp===undefined||w.gp===null)?w.g:w[c]}
+var toastT;function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("show")},2400)}
+
+/* ---- Manila time & next adjustment (Tue 6:00 AM, UTC+8) ---- */
+function manila(){return new Date(Date.now()+8*36e5)}
+function nextAdj(){
+ var m=manila(),d=new Date(Date.UTC(m.getUTCFullYear(),m.getUTCMonth(),m.getUTCDate(),6));
+ var add=(2-m.getUTCDay()+7)%7;if(add===0&&m>=d)add=7;d.setUTCDate(d.getUTCDate()+add);
+ return{date:d,ms:d-m,label:MON[d.getUTCMonth()]+" "+d.getUTCDate()};
+}
+function countdown(){
+ var n=nextAdj(),h=Math.floor(n.ms/36e5),dd=Math.floor(h/24),hh=h%24,mm=Math.floor(n.ms/6e4)%60;
+ var t=dd>0?dd+"d "+hh+"h":hh>0?hh+"h "+mm+"m":mm+"m";
+ $("countdown").querySelector("span").innerHTML="Next adjustment in <b>"+t+"</b> · Tue, "+n.label+", 6:00 AM";
+}
+
+/* ---- forecast ---- */
+function fc(ch,proj){
+ if(proj!==null&&proj!==undefined&&!isNaN(proj))return{m:proj,r:0.3,src:"projection"};
+ if(!ch.length)return{m:0,r:1.5,src:"trend"};
+ var last=ch[ch.length-1],rec=ch.slice(-4),avg=rec.reduce(function(a,b){return a+b},0)/rec.length;
+ var sd=Math.sqrt(rec.reduce(function(a,b){return a+(b-avg)*(b-avg)},0)/rec.length);
+ return{m:0.3*last+0.3*avg,r:Math.max(1.2,sd*1.1),src:"trend"};
+}
+function model(){
+ return FUELS[F].map(function(d){
+  var ch=S.weeks.map(function(w){return chg(w,d.ch)}),cur=S.price[d.k],f=fc(ch,S.proj[d.pj]);
+  var x=cur-ch.reduce(function(a,b){return a+b},0),pr=[x];
+  ch.forEach(function(c){x+=c;pr.push(x)});
+  var fp=cur+f.m;return{d:d,ch:ch,cur:cur,f:f,pr:pr,fp:fp,lo:fp-f.r,hi:fp+f.r};
+ });
+}
+
+/* ---- chart ---- */
+var CH={};
+function drawChart(data){
+ var all=[];data.forEach(function(o){all=all.concat(o.pr,[o.lo,o.hi])});
+ var mn=Math.floor(Math.min.apply(null,all)-1),mx=Math.ceil(Math.max.apply(null,all)+1);
+ var W=640,H=300,L=46,R=24,T=24,B=36,na=nextAdj();
+ var lab=["Before"].concat(S.weeks.map(function(w){return w.d}));
+ var nextLab=(S.weeks.length&&S.weeks[S.weeks.length-1].d===na.label)?"Next":na.label;
+ lab.push(nextLab);
+ var n=lab.length,li=n-2,dense=n>7;
+ function X(i){return L+i*(W-L-R)/(n-1)}function Y(v){return T+(mx-v)/(mx-mn)*(H-T-B)}
+ var h="",i;
+ for(i=0;i<=4;i++){var v=mn+(mx-mn)*i/4;h+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--ln)"/><text x="'+(L-8)+'" y="'+(Y(v)+4)+'" text-anchor="end" font-size="12" fill="var(--mu)">'+v.toFixed(0)+'</text>'}
+ h+='<rect x="'+(X(li)+0)+'" y="'+T+'" width="'+(X(li+1)-X(li)+R/2)+'" height="'+(H-T-B)+'" fill="var(--band)" opacity=".55"/>';
+ lab.forEach(function(t,j){if(dense&&j%2&&j!==n-1&&j!==li)return;h+='<text x="'+X(j)+'" y="'+(H-12)+'" text-anchor="middle" font-size="12" fill="var(--mu)"'+(j===n-1?' font-weight="600"':'')+'>'+esc(t)+'</text>'});
+ h+='<line id="guide" x1="0" x2="0" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--mu)" stroke-dasharray="3 3" opacity="0"/>';
+ data.forEach(function(o){
+  var c=o.d.col;
+  h+='<polygon fill="'+c+'" fill-opacity="0.16" points="'+X(li)+","+Y(o.cur)+" "+X(li+1)+","+Y(o.hi)+" "+X(li+1)+","+Y(o.lo)+'"/>';
+  h+='<polyline fill="none" stroke="'+c+'" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" points="'+o.pr.map(function(v,j){return X(j)+","+Y(v)}).join(" ")+'"/>';
+  h+='<line x1="'+X(li)+'" y1="'+Y(o.cur)+'" x2="'+X(li+1)+'" y2="'+Y(o.fp)+'" stroke="'+c+'" stroke-width="3" stroke-dasharray="6 5"/>';
+  o.pr.forEach(function(v,j){
+   h+='<circle cx="'+X(j)+'" cy="'+Y(v)+'" r="4.5" fill="'+c+'"/>';
+   if(!dense||j===li)h+='<text x="'+X(j)+'" y="'+(Y(v)+o.d.pos)+'" text-anchor="middle" font-size="12" font-weight="'+(j===li?700:400)+'" fill="var(--tx)">'+v.toFixed(2)+'</text>';
+  });
+  h+='<circle cx="'+X(li+1)+'" cy="'+Y(o.fp)+'" r="5" fill="var(--card)" stroke="'+c+'" stroke-width="3"/><text x="'+(X(li+1)-9)+'" y="'+(Y(o.fp)+o.d.pos)+'" text-anchor="end" font-size="12" font-weight="600" fill="var(--tx)">~'+o.fp.toFixed(2)+'</text>';
+ });
+ $("chart").innerHTML=h;
+ $("chart").setAttribute("aria-label",data.map(function(o){return o.d.n+" now ₱"+o.cur.toFixed(2)+", forecast about ₱"+o.fp.toFixed(2)}).join("; "));
+ CH={X:X,n:n,li:li,lab:lab,data:data,W:W};
+}
+function tipAt(clientX){
+ var svg=$("chart"),r=svg.getBoundingClientRect(),vx=(clientX-r.left)/r.width*CH.W,best=0,bd=1e9;
+ for(var j=0;j<CH.n;j++){var d=Math.abs(CH.X(j)-vx);if(d<bd){bd=d;best=j}}
+ var fut=best===CH.n-1,html="<b>"+esc(CH.lab[best])+(fut?" (forecast)":"")+"</b>";
+ CH.data.forEach(function(o){
+  if(fut)html+=o.d.n+": ~₱"+o.fp.toFixed(2)+" <span style='opacity:.7'>(₱"+o.lo.toFixed(2)+"–"+o.hi.toFixed(2)+")</span><br>";
+  else html+=o.d.n+": ₱"+o.pr[best].toFixed(2)+(best>0?" <span style='opacity:.7'>"+sign(o.ch[best-1])+"</span>":"")+"<br>";
+ });
+ var t=$("tip");t.innerHTML=html;
+ var px=CH.X(best)/CH.W*r.width,w=t.offsetWidth||160;px=Math.max(w/2,Math.min(r.width-w/2,px));
+ t.style.left=px+"px";t.classList.add("show");
+ var g=$("guide");if(g){g.setAttribute("x1",CH.X(best));g.setAttribute("x2",CH.X(best));g.setAttribute("opacity",".6")}
+}
+function tipHide(){$("tip").classList.remove("show");var g=$("guide");if(g)g.setAttribute("opacity","0")}
+$("chart").addEventListener("pointermove",function(e){tipAt(e.clientX)});
+$("chart").addEventListener("pointerdown",function(e){tipAt(e.clientX)});
+$("chart").addEventListener("pointerleave",tipHide);
+
+/* ---- render ---- */
+function renderStats(data){
+ $("stats").innerHTML=data.map(function(o){
+  var last=o.ch.length?o.ch[o.ch.length-1]:0;
+  return '<div class="tile"><div class="name"><i class="dot" style="background:'+o.d.col+'"></i>'+o.d.n+(o.d.sub?' <small style="margin-left:4px">· '+o.d.sub+'</small>':'')+'</div>'+
+   '<div class="price num">₱'+o.cur.toFixed(2)+'<small>/L</small></div>'+
+   '<div class="meta num"><div>Last change<b class="'+cls(last)+'">'+sign(last)+'</b></div><div style="text-align:right">Next Tue'+(o.f.src==="projection"?'<span class="badge">projected</span>':'')+'<b class="'+cls(o.f.m)+'">'+sign(o.f.m)+'</b></div></div></div>';
+ }).join("");
+}
+function renderVerdict(data){
+ var o=data[0],m=o.f.m,q=S.lit||0,diff=Math.abs(q*m),proj=o.f.src==="projection";
+ var basis=proj?"Based on the industry projection":"Based on the recent trend";
+ var ico,head,body;
+ if(m>0.5){ico="⬆️";head=(proj?"Hike expected":"Trend points to a hike")+" — fill up before Tuesday.";body=basis+", filling "+q+" L now could save about "+peso(diff)+"."}
+ else if(m<-0.5){ico="⬇️";head=(proj?"Rollback expected":"Trend points to a rollback")+" — wait until Tuesday if you can.";body=basis+", waiting could save about "+peso(diff)+" on "+q+" L."}
+ else{ico="↔️";head="No strong signal — fill up when you need to.";body=basis+", next week's change is likely small ("+sign(m)+"/L)."}
+ $("verdict").innerHTML='<span class="ico" aria-hidden="true">'+ico+'</span><div><strong>'+head+'</strong><span>'+body+'</span></div>';
+}
+function renderCost(data){
+ var q=S.lit||0,f=S.fpm||0;
+ $("cost").innerHTML=data.map(function(o){
+  var now=q*o.cur,nx=q*o.fp,d=nx-now;
+  return '<div><span><i class="dot" style="background:'+o.d.col+'"></i>'+o.d.n+'</span><span><b>'+peso(now)+'</b> → ~'+peso(nx)+' <em class="'+cls(d)+'">('+(d>0?"+":d<0?"−":"±")+peso(Math.abs(d))+')</em>'+(f>0?'<br><em class="flat">≈ '+peso(now*f)+' / month</em>':'')+'</span></div>';
+ }).join("");
+}
+function renderPin(){
+ $("pin").innerHTML=FUELS[F].map(function(d){return '<div><label for="pin-'+d.k+'">'+d.n+' price now (₱/L)</label><input id="pin-'+d.k+'" class="num" data-k="'+d.k+'" type="number" inputmode="decimal" step="0.01" min="1" value="'+S.price[d.k].toFixed(2)+'"></div>'}).join("");
+}
+function renderTable(){
+ var t="<tr><th>Week</th><th>Unleaded</th><th>Premium</th><th>Diesel</th></tr>";
+ if(!S.weeks.length)t+='<tr><td colspan="4" class="flat">No weeks yet — add this week\'s adjustment above.</td></tr>';
+ S.weeks.slice().reverse().forEach(function(w){var gp=chg(w,"gp");t+="<tr><td>"+esc(w.d)+(w.src?' <small class="flat" title="Added automatically">'+(w.src==="doe"?"DOE":"GasWatch")+'</small>':"")+"</td><td class='"+cls(w.g)+"'>"+sign(w.g)+"</td><td class='"+cls(gp)+"'>"+sign(gp)+"</td><td class='"+cls(w.z)+"'>"+sign(w.z)+"</td></tr>"});
+ $("tbl").innerHTML=t;
+}
+function renderProj(){$("pg").value=S.proj.g==null?"":S.proj.g;$("pz").value=S.proj.z==null?"":S.proj.z}
+var DATA;
+function render(){DATA=model();drawChart(DATA);renderStats(DATA);renderVerdict(DATA);renderCost(DATA);renderTable();$("legend").innerHTML=DATA.map(function(o){return '<span><i class="dot" style="background:'+o.d.col+'"></i>'+o.d.n+'</span>'}).join("")}
+function renderAll(){render();renderPin();renderProj();$("lit").value=S.lit;$("fpm").value=S.fpm;$("wd").value=$("wd").value||nextAdj().label;
+ [].forEach.call($("tabs").children,function(c){c.setAttribute("aria-selected",c.dataset.f===F)})}
+
+/* ---- events ---- */
+$("tabs").onclick=function(e){var b=e.target.closest("button");if(!b)return;F=b.dataset.f;try{localStorage.setItem(KEY+"-tab",F)}catch(x){}tipHide();renderAll()};
+$("lit").oninput=function(){var v=parseFloat(this.value);S.lit=v>0?v:0;save();renderVerdict(DATA);renderCost(DATA)};
+$("fpm").oninput=function(){var v=parseFloat(this.value);S.fpm=v>=0?v:0;save();renderCost(DATA)};
+$("save").onclick=function(){var ok=0;[].forEach.call($("pin").querySelectorAll("input"),function(i){var v=parseFloat(i.value);if(v>0){S.price[i.dataset.k]=v;ok++}});save();render();renderPin();toast(ok?"Prices saved":"Enter a valid price")};
+$("pin").addEventListener("keydown",function(e){if(e.key==="Enter")$("save").click()});
+$("projsave").onclick=function(){var g=parseFloat($("pg").value),z=parseFloat($("pz").value);S.proj={g:isNaN(g)?null:g,z:isNaN(z)?null:z};save();render();toast(S.proj.g==null&&S.proj.z==null?"Using trend forecast":"Forecast now uses the industry projection")};
+$("projclear").onclick=function(){S.proj={g:null,z:null};save();renderProj();render();toast("Projection cleared")};
+$("add").onclick=function(){
+ var d=$("wd").value.trim(),g=parseFloat($("wg").value),z=parseFloat($("wdz").value),gp=parseFloat($("wgp").value);
+ if(isNaN(gp))gp=g;
+ if(!d||isNaN(g)||isNaN(z)){toast("Fill in the week, unleaded and diesel changes");return}
+ if(S.weeks.some(function(w){return w.d.toLowerCase()===d.toLowerCase()})&&!confirm(d+" is already in your history. Add it again?"))return;
+ S.weeks.push({d:d.slice(0,12),g:g,gp:gp,z:z});
+ S.price.u=r2(S.price.u+g);S.price.p=r2(S.price.p+gp);S.price.d=r2(S.price.d+z);
+ if(S.weeks.length>MAXW)S.weeks.shift();
+ S.proj={g:null,z:null};
+ save();$("wd").value=$("wg").value=$("wgp").value=$("wdz").value="";renderAll();toast("Added "+d+" — prices updated");
+};
+$("undo").onclick=function(){
+ var w=S.weeks[S.weeks.length-1];if(!w){toast("Nothing to undo");return}
+ if(!confirm("Remove "+w.d+" and reverse its price changes?"))return;
+ if(w.iso&&S.skip.indexOf(w.iso)<0){S.skip.push(w.iso);if(S.skip.length>20)S.skip.shift()}
+ S.weeks.pop();S.price.u=r2(S.price.u-w.g);S.price.p=r2(S.price.p-chg(w,"gp"));S.price.d=r2(S.price.d-w.z);
+ save();renderAll();toast("Removed "+w.d);
+};
+$("reset").onclick=function(){if(!confirm("Reset all prices and weeks back to the defaults?"))return;S=clone(DEF);save();$("wd").value="";renderAll();toast("Reset to defaults");syncWeeks()};
+$("share").onclick=function(){
+ var all=FUELS.g.concat(FUELS.d).map(function(d){var ch=S.weeks.map(function(w){return chg(w,d.ch)}),f=fc(ch,S.proj[d.pj]);return d.n+" ₱"+S.price[d.k].toFixed(2)+" (next Tue "+sign(f.m)+")"});
+ var txt="⛽ PH Gas Watch — "+all.join(", ");
+ if(navigator.share)navigator.share({title:"PH Gas Watch",text:txt,url:location.href}).catch(function(){});
+ else if(navigator.clipboard)navigator.clipboard.writeText(txt+" "+location.href).then(function(){toast("Copied to clipboard")});
+ else prompt("Copy this:",txt);
+};
+/* ---- automatic weekly updates (from /api/weeks) ---- */
+function isoLabel(iso){var p=iso.split("-");return MON[+p[1]-1]+" "+(+p[2])}
+function weekIso(w){
+ if(w.iso)return w.iso;
+ var m=/^([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2})$/.exec(String(w.d).trim());if(!m)return null;
+ var mi=-1;for(var i=0;i<12;i++)if(MON[i].toLowerCase()===m[1].toLowerCase())mi=i;if(mi<0)return null;
+ var now=manila(),y=now.getUTCFullYear(),t=Date.UTC(y,mi,+m[2]);if(t-now.getTime()>8*864e5)t=Date.UTC(y-1,mi,+m[2]);
+ return new Date(t).toISOString().slice(0,10);
+}
+function applyWeeks(list){
+ var added=[],fixed=[],lastIso=null;
+ S.weeks.forEach(function(w){var i=weekIso(w);if(i&&(!lastIso||i>lastIso))lastIso=i});
+ list.forEach(function(r,idx){
+  if(!r||!/^\d{4}-\d{2}-\d{2}$/.test(r.week)||[r.g,r.gp,r.z].some(function(v){return typeof v!=="number"||!isFinite(v)}))return;
+  var lab=isoLabel(r.week),w=null;
+  for(var i=0;i<S.weeks.length;i++){var x=S.weeks[i];if(weekIso(x)===r.week||String(x.d).toLowerCase()===lab.toLowerCase()){w=x;break}}
+  if(w){
+   // Correct an automatically added week if the source revised it (e.g. DOE's official numbers).
+   if(w.auto&&(w.g!==r.g||chg(w,"gp")!==r.gp||w.z!==r.z)){
+    S.price.u=r2(S.price.u+r.g-w.g);S.price.p=r2(S.price.p+r.gp-chg(w,"gp"));S.price.d=r2(S.price.d+r.z-w.z);
+    w.g=r.g;w.gp=r.gp;w.z=r.z;fixed.push(lab);
+   }
+   if(w.auto)w.src=r.src;
+   return;
+  }
+  if(S.skip.indexOf(r.week)>=0)return;
+  if(lastIso?r.week<=lastIso:idx!==list.length-1)return; // only append weeks newer than your history
+  S.weeks.push({d:lab,g:r.g,gp:r.gp,z:r.z,iso:r.week,src:r.src,auto:1});
+  S.price.u=r2(S.price.u+r.g);S.price.p=r2(S.price.p+r.gp);S.price.d=r2(S.price.d+r.z);
+  lastIso=r.week;added.push(lab);
+ });
+ if(added.length){S.proj={g:null,z:null};while(S.weeks.length>MAXW)S.weeks.shift()}
+ return{added:added,fixed:fixed};
+}
+var SYNC={at:null,checked:null,err:false};
+function renderSync(){
+ var el=$("syncst");if(!el)return;
+ if(SYNC.err&&!SYNC.at){el.textContent="Automatic updates are unavailable right now. You can still add weeks by hand.";return}
+ var last=null;for(var i=S.weeks.length-1;i>=0;i--)if(S.weeks[i].src){last=S.weeks[i];break}
+ var t=SYNC.checked?new Date(new Date(SYNC.checked).getTime()+8*36e5):null;
+ var when=t?" · sources checked "+MON[t.getUTCMonth()]+" "+t.getUTCDate()+", "+((t.getUTCHours()+11)%12+1)+":"+("0"+t.getUTCMinutes()).slice(-2)+(t.getUTCHours()<12?" AM":" PM"):"";
+ el.textContent="Auto-updates on"+(last?" · latest: "+last.d+" ("+(last.src==="doe"?"DOE official":"GasWatch PH")+")":"")+when;
+}
+function syncWeeks(){
+ if(!window.fetch)return;
+ fetch("/api/weeks",{headers:{Accept:"application/json"}}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+  SYNC.at=Date.now();SYNC.checked=j.checked||null;SYNC.err=false;
+  var res=applyWeeks(Array.isArray(j.weeks)?j.weeks:[]);
+  if(res.added.length||res.fixed.length){
+   save();renderAll();
+   if(res.added.length)toast("Added "+res.added.join(", ")+" automatically — prices updated");
+   else toast("Updated "+res.fixed.join(", ")+" with official DOE numbers");
+  }
+  renderSync();
+ }).catch(function(){SYNC.err=true;renderSync()});
+}
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&(!SYNC.at||Date.now()-SYNC.at>10*6e4))syncWeeks()});
+var THEMES=["auto","light","dark"],TH=lsGet(KEY+"-theme")||"auto";
+function applyTheme(){if(TH==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",TH);$("theme").title="Theme: "+TH;$("theme").textContent=TH==="light"?"☀︎":TH==="dark"?"☾":"◐"}
+$("theme").onclick=function(){TH=THEMES[(THEMES.indexOf(TH)+1)%3];try{localStorage.setItem(KEY+"-theme",TH)}catch(e){}applyTheme();toast("Theme: "+TH)};
+applyTheme();renderAll();countdown();setInterval(countdown,30000);syncWeeks();setInterval(syncWeeks,30*6e4);
+</script>
+</body>
+</html>

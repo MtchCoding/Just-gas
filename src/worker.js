@@ -1,6 +1,3 @@
-// Serves the static site (public/) and one API route: /api/weeks
-// It reads GasWatch PH's price-history page and returns the latest DOE-confirmed
-// weekly adjustment in the JSON shape the app expects.
 
 const SOURCE = "https://gaswatchph.com/price-history";
 const MONTHS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
@@ -25,7 +22,7 @@ function toTuesdayIso(monthIdx, day) {
   let t = Date.UTC(y, monthIdx, day);
   if (t - manilaNow.getTime() > 8 * 864e5) t = Date.UTC(--y, monthIdx, day);
   const d = new Date(t);
-  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 5) % 7)); // back to Tuesday
+  d.setUTCDate(d.setUTCDate() - ((d.getUTCDay() + 5) % 7)); // back to Tuesday
   return d.toISOString().slice(0, 10);
 }
 
@@ -49,7 +46,11 @@ export default {
     const url = new URL(request.url);
     if (url.pathname !== "/api/weeks") return env.ASSETS.fetch(request);
 
-    const headers = { "content-type": "application/json", "cache-control": "public, max-age=900" };
+    const headers = { 
+      "content-type": "application/json", 
+      "cache-control": "public, max-age=900",
+      "access-control-allow-origin": "*"
+    };
     try {
       const r = await fetch(SOURCE, {
         headers: { "user-agent": "Mozilla/5.0 (compatible; JustGasBot/1.0)" },
